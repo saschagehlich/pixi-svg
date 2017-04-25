@@ -1,6 +1,6 @@
 /*!
  * pixi-svg - v1.0.0
- * Compiled Mon, 24 Apr 2017 23:10:32 UTC
+ * Compiled Tue, 25 Apr 2017 12:28:13 UTC
  *
  * pixi-svg is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
@@ -189,77 +189,68 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+// <div> element to measure string colors like "black"
+// and convert to hex colors
+var measureColor = document.createElement('div');
+
 /**
- * Render SVG as Graphics
- * @class SVGUtils
+ * Scalable Graphics drawn from SVG image document.
+ * @class SVG
+ * @extends PIXI.Graphics
  * @memberof PIXI
+ * @param {SVGSVGElement} svg - SVG Element `<svg>`
  */
-var SVGUtils = function () {
-    function SVGUtils() {
-        _classCallCheck(this, SVGUtils);
+
+var SVG = function (_PIXI$Graphics) {
+    _inherits(SVG, _PIXI$Graphics);
+
+    /**
+     * Constructor
+     */
+    function SVG(svg) {
+        _classCallCheck(this, SVG);
+
+        var _this = _possibleConstructorReturn(this, _PIXI$Graphics.call(this));
+
+        _this.fill(svg);
+        _this.svgChildren(svg.children);
+        return _this;
     }
 
     /**
      * Create a PIXI Graphic from SVG element
-     * @static
-     * @method PIXI.SVGUtils.from
-     * @param {SVGSVGElement} svg - SVG Element
-     * @param {Number} [resolution=1] - Default resolution
-     * @param {PIXI.Graphics} [graphic=null] - Graphic to use, or else create a new one.
-     */
-    SVGUtils.from = function from(svg) {
-        var resolution = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-        var graphic = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-
-        if (!graphic) {
-            graphic = new PIXI.Graphics();
-        }
-        this.fill(graphic, svg, resolution);
-        this.parseChildren(graphic, svg.children, resolution);
-        return graphic;
-    };
-
-    /**
-     * Create a PIXI Graphic from SVG element
-     * @static
      * @private
-     * @method PIXI.SVGUtils.parseChildren
+     * @method PIXI.SVG#svgChildren
      * @param {Array<*>} children - Collection of SVG nodes
-     * @param {Number} resolution - Default resolution
-     * @param {PIXI.Graphics} graphic - Graphic to use, or else create a new one.
+     * @param {Boolean} [inherit=false] Whether to inherit fill settings.
      */
 
 
-    SVGUtils.parseChildren = function parseChildren(graphic, children, resolution) {
-        var inherit = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+    SVG.prototype.svgChildren = function svgChildren(children) {
+        var inherit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
         for (var i = 0; i < children.length; i++) {
             var child = children[i];
-            this.fill(graphic, child, resolution, inherit);
+            this.fill(child, inherit);
             switch (child.nodeName.toLowerCase()) {
                 case 'path':
                     {
-                        this.drawPath(graphic, child, resolution);
+                        this.svgPath(child);
                         break;
                     }
                 case 'circle':
-                    {
-                        this.drawCircle(graphic, child, resolution);
-                        break;
-                    }
                 case 'ellipse':
                     {
-                        this.drawEllipse(graphic, child, resolution);
+                        this.svgCircle(child);
                         break;
                     }
                 case 'rect':
                     {
-                        this.drawRect(graphic, child, resolution);
-                        break;
-                    }
-                case 'polyline':
-                    {
-                        this.drawPolygon(graphic, child, resolution);
+                        this.svgRect(child);
                         break;
                     }
                 case 'g':
@@ -272,19 +263,18 @@ var SVGUtils = function () {
                         break;
                     }
             }
-            this.parseChildren(graphic, child.children, resolution, true);
+            this.svgChildren(child.children, true);
         }
     };
 
     /**
      * Convert the Hexidecimal string (e.g., "#fff") to uint
-     * @static
      * @private
-     * @method PIXI.SVGUtils.hexToUint
+     * @method PIXI.SVG#hexToUint
      */
 
 
-    SVGUtils.hexToUint = function hexToUint(hex) {
+    SVG.prototype.hexToUint = function hexToUint(hex) {
         if (hex[0] === '#') {
             // Remove the hash
             hex = hex.substr(1);
@@ -295,128 +285,98 @@ var SVGUtils = function () {
             }
             return parseInt(hex, 16);
         } else {
-            var div = document.createElement('div');
-            div.style.color = hex;
-            var rgb = window.getComputedStyle(document.body.appendChild(div)).color.match(/\d+/g).map(function (a) {
+            measureColor.style.color = hex;
+            var rgb = window.getComputedStyle(document.body.appendChild(measureColor)).color.match(/\d+/g).map(function (a) {
                 return parseInt(a, 10);
             });
-            document.body.removeChild(div);
+            document.body.removeChild(measureColor);
             return (rgb[0] << 16) + (rgb[1] << 8) + rgb[2];
         }
     };
 
     /**
-     * Render a <circle> element
-     * @static
-     * @private
-     * @method PIXI.SVGUtils.drawCircle
-     * @param {PIXI.Graphics} graphic
-     * @param {SVGCircleElement} circleNode
-     * @param {Number} resolution
-     */
-
-
-    SVGUtils.drawCircle = function drawCircle(graphic, circleNode, resolution) {
-        this.internalEllipse(graphic, circleNode, 'r', 'r', resolution);
-    };
-
-    /**
-     * Render a <ellipse> element
-     * @static
-     * @private
-     * @method PIXI.SVGUtils.drawEllipse
-     * @param {PIXI.Graphics} graphic
-     * @param {SVGCircleElement} ellipseNode
-     * @param {Number} resolution
-     */
-
-
-    SVGUtils.drawEllipse = function drawEllipse(graphic, ellipseNode, resolution) {
-        this.internalEllipse(graphic, ellipseNode, 'rx', 'ry', resolution);
-    };
-
-    /**
      * Render a <ellipse> element or <circle> element
-     * @static
      * @private
-     * @method PIXI.SVGUtils.internalEllipse
-     * @param {PIXI.Graphics} graphic
+     * @method PIXI.SVG#internalEllipse
      * @param {SVGCircleElement} node
-     * @param {Number} wName Width name property
-     * @param {Number} hName Height name property
-     * @param {Number} resolution
      */
 
 
-    SVGUtils.internalEllipse = function internalEllipse(graphic, node, wName, hName, resolution) {
-        var width = parseFloat(node.getAttribute(wName)) * resolution;
-        var height = parseFloat(node.getAttribute(hName)) * resolution;
+    SVG.prototype.svgCircle = function svgCircle(node) {
+
+        var heightProp = 'r';
+        var widthProp = 'r';
+        var isEllipse = node.nodeName === 'elipse';
+        if (isEllipse) {
+            heightProp += 'x';
+            widthProp += 'y';
+        }
+        var width = parseFloat(node.getAttribute(widthProp));
+        var height = parseFloat(node.getAttribute(heightProp));
         var cx = node.getAttribute('cx');
         var cy = node.getAttribute('cy');
         var x = 0;
         var y = 0;
         if (cx !== null) {
-            x = parseFloat(cx) * resolution;
+            x = parseFloat(cx);
         }
         if (cy !== null) {
-            y = parseFloat(cy) * resolution;
+            y = parseFloat(cy);
         }
-        graphic.drawEllipse(x, y, width, height);
+        if (!isEllipse) {
+            this.drawCircle(x, y, width);
+        } else {
+            this.drawEllipse(x, y, width, height);
+        }
     };
 
     /**
      * Render a <rect> element
-     * @static
      * @private
-     * @method PIXI.SVGUtils.drawRect
-     * @param {PIXI.Graphics} graphic
-     * @param {SVGRectElement} rectNode
-     * @param {Number} resolution
+     * @method PIXI.SVG#svgRect
+     * @param {SVGRectElement} node
      */
 
 
-    SVGUtils.drawRect = function drawRect(graphic, rectNode, resolution) {
-        var x = parseFloat(rectNode.getAttribute('x'));
-        var y = parseFloat(rectNode.getAttribute('y'));
-        var width = parseFloat(rectNode.getAttribute('width'));
-        var height = parseFloat(rectNode.getAttribute('height'));
-        var rx = parseFloat(rectNode.getAttribute('rx'));
+    SVG.prototype.svgRect = function svgRect(node) {
+        var x = parseFloat(node.getAttribute('x'));
+        var y = parseFloat(node.getAttribute('y'));
+        var width = parseFloat(node.getAttribute('width'));
+        var height = parseFloat(node.getAttribute('height'));
+        var rx = parseFloat(node.getAttribute('rx'));
         if (rx) {
-            graphic.drawRoundedRect(x * resolution, y * resolution, width * resolution, height * resolution, rx * resolution);
+            this.drawRoundedRect(x, y, width, height, rx);
         } else {
-            graphic.drawRect(x * resolution, y * resolution, width * resolution, height * resolution);
+            this.drawRect(x, y, width, height);
         }
     };
 
     /**
      * Set the fill and stroke style.
-     * @static
      * @private
-     * @method PIXI.SVGUtils.fill
-     * @param {PIXI.Graphics} graphic
+     * @method PIXI.SVG#fill
      * @param {SVGElement} node
-     * @param {Number} resolution
      * @param {Boolean} inherit
      */
 
 
-    SVGUtils.fill = function fill(graphic, node, resolution, inherit) {
+    SVG.prototype.fill = function fill(node, inherit) {
         var fill = node.getAttribute('fill');
         var opacity = node.getAttribute('opacity');
         var stroke = node.getAttribute('stroke');
         var strokeWidth = node.getAttribute('stroke-width');
         var lineWidth = strokeWidth !== null ? parseFloat(strokeWidth) : 0;
-        var lineColor = stroke !== null ? this.hexToUint(stroke) : graphic.lineColor;
+        var lineColor = stroke !== null ? this.hexToUint(stroke) : this.lineColor;
         if (fill) {
             if (fill === 'none') {
-                graphic.beginFill(0, 0);
+                this.beginFill(0, 0);
             } else {
-                graphic.beginFill(this.hexToUint(fill), opacity !== null ? parseFloat(opacity) : 1);
+                this.beginFill(this.hexToUint(fill), opacity !== null ? parseFloat(opacity) : 1);
             }
         } else if (!inherit) {
-            graphic.beginFill(0);
+            this.beginFill(0);
         }
-        graphic.lineStyle(lineWidth * resolution, lineColor);
+        this.lineStyle(lineWidth, lineColor);
 
         if (node.getAttribute('stroke-linejoin')) {
             console.info('[SVGUtils] "stroke-linejoin" attribute is not supported');
@@ -431,16 +391,13 @@ var SVGUtils = function () {
 
     /**
      * Render a <path> d element
-     * @static
-     * @method PIXI.SVGUtils.drawPath
-     * @param {PIXI.Graphics} graphic
-     * @param {SVGPathElement} pathNode
-     * @param {Number} resolution
+     * @method PIXI.SVG#svgPath
+     * @param {SVGPathElement} node
      */
 
 
-    SVGUtils.drawPath = function drawPath(graphic, pathNode, resolution) {
-        var d = pathNode.getAttribute('d');
+    SVG.prototype.svgPath = function svgPath(node) {
+        var d = node.getAttribute('d');
         var x = void 0,
             y = void 0;
         var commands = (0, _dPathParser2.default)(d);
@@ -449,61 +406,61 @@ var SVGUtils = function () {
             switch (command.code) {
                 case 'm':
                     {
-                        graphic.moveTo(x += command.end.x * resolution, y += command.end.y * resolution);
+                        this.moveTo(x += command.end.x, y += command.end.y);
                         break;
                     }
                 case 'M':
                     {
-                        graphic.moveTo(x = command.end.x * resolution, y = command.end.y * resolution);
+                        this.moveTo(x = command.end.x, y = command.end.y);
                         break;
                     }
                 case 'H':
                     {
-                        graphic.lineTo(x = command.value * resolution, y);
+                        this.lineTo(x = command.value, y);
                         break;
                     }
                 case 'h':
                     {
-                        graphic.lineTo(x += command.value * resolution, y);
+                        this.lineTo(x += command.value, y);
                         break;
                     }
                 case 'V':
                     {
-                        graphic.lineTo(x, y = command.value * resolution);
+                        this.lineTo(x, y = command.value);
                         break;
                     }
                 case 'v':
                     {
-                        graphic.lineTo(x, y += command.value * resolution);
+                        this.lineTo(x, y += command.value);
                         break;
                     }
                 case 'Z':
                     {
-                        graphic.closePath();
+                        this.closePath();
                         break;
                     }
                 case 'L':
                     {
-                        graphic.lineTo(x = command.end.x * resolution, y = command.end.y * resolution);
+                        this.lineTo(x = command.end.x, y = command.end.y);
                         break;
                     }
                 case 'l':
                     {
-                        graphic.lineTo(x += command.end.x * resolution, y += command.end.y * resolution);
+                        this.lineTo(x += command.end.x, y += command.end.y);
                         break;
                     }
                 case 'C':
                     {
                         var currX = x;
                         var currY = y;
-                        graphic.bezierCurveTo(currX + command.cp1.x * resolution, currY + command.cp1.y * resolution, currX + command.cp2.x * resolution, currY + command.cp2.y * resolution, x = command.end.x * resolution, y = command.end.y * resolution);
+                        this.bezierCurveTo(currX + command.cp1.x, currY + command.cp1.y, currX + command.cp2.x, currY + command.cp2.y, x = command.end.x, y = command.end.y);
                         break;
                     }
                 case 'c':
                     {
                         var _currX = x;
                         var _currY = y;
-                        graphic.bezierCurveTo(_currX + command.cp1.x * resolution, _currY + command.cp1.y * resolution, _currX + command.cp2.x * resolution, _currY + command.cp2.y * resolution, x += command.end.x * resolution, y += command.end.y * resolution);
+                        this.bezierCurveTo(_currX + command.cp1.x, _currY + command.cp1.y, _currX + command.cp2.x, _currY + command.cp2.y, x += command.end.x, y += command.end.y);
                         break;
                     }
                 case 's':
@@ -511,7 +468,7 @@ var SVGUtils = function () {
                     {
                         var _currX2 = x;
                         var _currY2 = y;
-                        graphic.quadraticCurveTo(_currX2 + command.cp.x * resolution, _currY2 + command.cp.y * resolution, x += command.end.x * resolution, y += command.end.y * resolution);
+                        this.quadraticCurveTo(_currX2 + command.cp.x, _currY2 + command.cp.y, x += command.end.x, y += command.end.y);
                         break;
                     }
                 case 'S':
@@ -519,7 +476,7 @@ var SVGUtils = function () {
                     {
                         var _currX3 = x;
                         var _currY3 = y;
-                        graphic.quadraticCurveTo(_currX3 + command.cp.x * resolution, _currY3 + command.cp.y * resolution, x = command.end.x * resolution, y = command.end.y * resolution);
+                        this.quadraticCurveTo(_currX3 + command.cp.x, _currY3 + command.cp.y, x = command.end.x, y = command.end.y);
                         break;
                     }
                 default:
@@ -531,16 +488,37 @@ var SVGUtils = function () {
         }
     };
 
-    return SVGUtils;
-}();
+    return SVG;
+}(PIXI.Graphics);
+
+exports.default = SVG;
+
+},{"d-path-parser":1}],3:[function(require,module,exports){
+'use strict';
+
+exports.__esModule = true;
+
+var _SVG = require('./SVG');
+
+var _SVG2 = _interopRequireDefault(_SVG);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Check that PIXI exists
+if (typeof PIXI === 'undefined') {
+    throw 'pixi.js not found';
+}
 
 // Assign to global pixi object
+Object.defineProperty(PIXI, 'SVG', {
+    get: function get() {
+        return _SVG2.default;
+    }
+});
 
+exports.default = _SVG2.default;
 
-exports.default = SVGUtils;
-PIXI.SVGUtils = SVGUtils;
-
-},{"d-path-parser":1}]},{},[2])(2)
+},{"./SVG":2}]},{},[3])(3)
 });
 
 
