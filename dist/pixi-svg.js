@@ -1,6 +1,6 @@
 /*!
  * pixi-svg - v1.0.0
- * Compiled Tue, 25 Apr 2017 12:44:43 UTC
+ * Compiled Tue, 25 Apr 2017 19:38:19 UTC
  *
  * pixi-svg is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
@@ -253,6 +253,16 @@ var SVG = function (_PIXI$Graphics) {
                         this.svgRect(child);
                         break;
                     }
+                case 'polygon':
+                    {
+                        this.svgPoly(child, true);
+                        break;
+                    }
+                case 'polyline':
+                    {
+                        this.svgPoly(child);
+                        break;
+                    }
                 case 'g':
                     {
                         break;
@@ -352,6 +362,60 @@ var SVG = function (_PIXI$Graphics) {
     };
 
     /**
+     * Get the style property and parse options.
+     * @private
+     * @method PIXI.SVG#svgStyle
+     * @param {SVGElement} node
+     * @return {Object} Style attributes
+     */
+
+
+    SVG.prototype.svgStyle = function svgStyle(node) {
+        var style = node.getAttribute('style');
+        var result = {
+            fill: node.getAttribute('fill'),
+            opacity: node.getAttribute('opacity'),
+            stroke: node.getAttribute('stroke'),
+            strokeWidth: node.getAttribute('stroke-width')
+        };
+        if (style !== null) {
+            style.split(';').forEach(function (prop) {
+                var _prop$split = prop.split(':'),
+                    name = _prop$split[0],
+                    value = _prop$split[1];
+
+                result[name.trim()] = value.trim();
+            });
+            if (result['stroke-width']) {
+                result.strokeWidth = result['stroke-width'];
+                delete result['stroke-width'];
+            }
+        }
+        return result;
+    };
+
+    /**
+     * Render a polyline element.
+     * @private
+     * @method PIXI.SVG#svgPoly
+     * @param {SVGPolylineElement} node
+     */
+
+
+    SVG.prototype.svgPoly = function svgPoly(node, close) {
+
+        var points = node.getAttribute('points').split(/[ ,]/g).map(function (p) {
+            return parseInt(p);
+        });
+
+        this.drawPolygon(points);
+
+        if (close) {
+            this.closePath();
+        }
+    };
+
+    /**
      * Set the fill and stroke style.
      * @private
      * @method PIXI.SVG#fill
@@ -361,11 +425,14 @@ var SVG = function (_PIXI$Graphics) {
 
 
     SVG.prototype.fill = function fill(node, inherit) {
-        var fill = node.getAttribute('fill');
-        var opacity = node.getAttribute('opacity');
-        var stroke = node.getAttribute('stroke');
-        var strokeWidth = node.getAttribute('stroke-width');
-        var lineWidth = strokeWidth !== null ? parseFloat(strokeWidth) : 0;
+        var _svgStyle = this.svgStyle(node),
+            fill = _svgStyle.fill,
+            opacity = _svgStyle.opacity,
+            stroke = _svgStyle.stroke,
+            strokeWidth = _svgStyle.strokeWidth;
+
+        var defaultLineWidth = stroke !== null ? 1 : 0;
+        var lineWidth = strokeWidth !== null ? parseFloat(strokeWidth) : defaultLineWidth;
         var lineColor = stroke !== null ? this.hexToUint(stroke) : this.lineColor;
         if (fill) {
             if (fill === 'none') {
