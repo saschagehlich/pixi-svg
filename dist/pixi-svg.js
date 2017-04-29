@@ -1,6 +1,6 @@
 /*!
  * pixi-svg - v1.0.0
- * Compiled Thu, 27 Apr 2017 15:30:16 UTC
+ * Compiled Sat, 29 Apr 2017 00:18:27 UTC
  *
  * pixi-svg is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
@@ -575,13 +575,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 if (typeof PIXI === 'undefined') {
     throw 'pixi.js not found';
 }
-
-// Assign to global pixi object
-Object.defineProperty(PIXI, 'SVG', {
-    get: function get() {
-        return _SVG2.default;
+// Don't define twice
+else if (!PIXI.SVG) {
+        // Assign to global pixi object
+        Object.defineProperty(PIXI, 'SVG', {
+            get: function get() {
+                return _SVG2.default;
+            }
+        });
     }
-});
 
 exports.default = _SVG2.default;
 
