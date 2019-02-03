@@ -1,5 +1,5 @@
 import SVG from './SVG';
-import PIXI from 'pixi.js';
+const PIXI = require('pixi.js');
 
 // Don't define twice
 if (!PIXI.SVG) {

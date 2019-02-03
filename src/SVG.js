@@ -1,5 +1,5 @@
 import dPathParse from 'd-path-parser';
-import PIXI from 'pixi.js';
+const PIXI = require('pixi.js');
 
 // <div> element to measure string colors like "black"
 // and convert to hex colors
