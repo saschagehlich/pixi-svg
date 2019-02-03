@@ -8,7 +8,7 @@
     "lint": "eslint src",
     "build": "npm run dist && npm run lib",
     "predist": "rimraf dist/*",
-    "dist": "pixify -d dist -o \"pixi-svg\" -t babelify",
+    "dist": "pixify -d dist -o \"pixi-svg\" -t babelify --no-external",
     "prelib": "rimraf lib/*",
     "lib": "babel src --out-dir lib -s",
     "watch": "npm run dist -- --watch",
@@ -44,7 +44,8 @@
   },
   "homepage": "https://github.com/bigtimebuddy/pixi-svg#readme",
   "dependencies": {
-    "d-path-parser": "^1.0.0"
+    "d-path-parser": "^1.0.0",
+    "pixi.js": "^4.8.5"
   },
   "peerDependencies": {
     "pixi.js": "^4.0.0"
